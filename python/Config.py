@@ -10,7 +10,7 @@ CONTROLLERS = [
         'sn':5
     },
     {
-        'name':"C1",
+        'name':"C2",
         'ip':'127.0.0.1',
         'port':6634,
         'sn':3
