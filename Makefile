@@ -8,3 +8,7 @@ mn-clean:
 
 gui-topo:
 	ryu run --observe-links ./python/tools/gui_topology/gui_topology.py
+
+
+simple-net:
+	sudo mn --topo single,3 --mac --switch ovsk --controller remote
