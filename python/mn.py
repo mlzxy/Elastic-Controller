@@ -27,7 +27,9 @@ import Config
 config = {
     'NODE_NUMBER_PER_SWITCH':Config.NODE_NUMBER_PER_SWITCH,
     'CONTROLLERS':Config.CONTROLLERS,
-    'SWITCH_NUMBER':8             # S1-S8
+    'SWITCH_NUMBER':8,             # S1-S8
+    'TOPO':Config.TOPO,
+    'USE_TOPO':Config.USE_TOPO
 }
 setLogLevel( 'info' )  # for CLI output
 
@@ -38,13 +40,7 @@ def GenController(net,cfg):
 
 
 def CubeLink(net,switches):
-    connects = [[1,2],[1,4],[1,5],
-                [2,3],[2,6],
-                [3,4],[3,7],
-                [4,8],
-                [5,6],[5,8],
-                [6,7],
-                [7,8]]
+    connects = config['TOPO'][config['USE_TOPO']]
     for c in connects:
         print "***** Linking Switch "+ str(c[0]) + " and Switch " + str(c[1])
         net.addLink(switches[c[0]-1],switches[c[1]-1])
@@ -61,7 +57,7 @@ def gnet():
     C1 = GenController(net, config['CONTROLLERS'][0])
     C2 = GenController(net, config['CONTROLLERS'][1])    
     
-
+    
     print "*** Creating Switches and Hosts"
     for i in range(1,config['SWITCH_NUMBER']+1):        
         swchName = 'S'+str(i)
