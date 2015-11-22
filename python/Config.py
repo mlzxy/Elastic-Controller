@@ -18,6 +18,26 @@ CONTROLLERS = [
 ]                 # sn1 + sn2 = 8
 
 
+
+
+MONITOR = {
+    "PORT":9200,
+    "METHODS":{
+        "STAT":["/stat","POST"],
+        "FINISH_MIGRATION":["/change_topo","POST"]
+    },
+    "CHECK_INTERVAL":10         # seconds
+}
+
+CONTROLLER = {
+    'STAT_SUBMIT_INTERVAL':2,
+    'METHODS':{
+        'START_MIGRATION':['/migrate','GET']        
+    }
+}
+
+
+
 # USE_TOPO = 'cube'
 USE_TOPO = 'tree'
 

@@ -21,7 +21,7 @@ class SimpleSwitchRest13(simple_switch.SimpleSwitch):
         self.switches = {}
         wsgi = kwargs['wsgi']
         wsgi.register(SimpleSwitchController, {simple_switch_instance_name : self}) # set request handler class, like normal web application development
-
+        
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
     def switch_features_handler(self, ev):
         # super(SimpleSwitchRest13, self).switch_features_handler(ev)

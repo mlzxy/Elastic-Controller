@@ -24,8 +24,26 @@ ryu-hub-C2:
 	ryu-manager --wsapi-port 8080 --ofp-tcp-listen-port 6634 \
 		./python/Samples/simpleSwitchHub.py
 
+
+
 update-requirements:
 	rm -f ./requirements.txt &&  pip freeze > ./requirements.txt
 
 install-requirements:
 	pip install -r ./requirements.txt
+
+# following is start the real program
+
+controller_1:
+	echo "Controller 1 for Switches 1,2,3,4,5\n" &&	 \
+	ryu-manager --wsapi-port 8081 --ofp-tcp-listen-port 6633 \
+		./python/controller.py
+
+controller_2:
+	echo "Controller 2 for Switches 6,7,8\n" &&  \
+	ryu-manager --wsapi-port 8080 --ofp-tcp-listen-port 6634 \
+		./python/controller.py	
+monitor:
+	python ./python/monitor.py
+
+
