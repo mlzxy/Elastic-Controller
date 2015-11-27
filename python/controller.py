@@ -19,7 +19,7 @@ from datetime import datetime
 
 from ryu import cfg
 CONF = cfg.CONF
-CONTROLLER_ADDR = 'http://127.0.0.1:' + CONF['wsapi_port']
+CONTROLLER_ADDR = 'http://127.0.0.1:' + str(CONF['wsapi_port'])
 
 # import pdb
 # pdb.set_trace()
