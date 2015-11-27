@@ -25,7 +25,7 @@ CONTROLLER_ADDR = 'http://127.0.0.1:' + str(CONF['wsapi_port'])
 # pdb.set_trace()
 
 def http_send_stat(x):
-    return util.Http_Request('http:127.0.0.1:'+config.MONITOR['PORT']+config.MONITOR['METHODS']['STAT'][0],x)
+    return util.Http_Request('http://127.0.0.1:'+str(config.MONITOR['PORT'])+str(config.MONITOR['METHODS']['STAT'][0]),x)
     
 
 
