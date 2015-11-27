@@ -1,6 +1,8 @@
 import threading
 import requests
 import json
+import datetime
+from dateutil  import parser
 
 
 def Set_Interval(func, sec):
@@ -14,6 +16,14 @@ def Set_Interval(func, sec):
 
 def Http_Request(addr,data):
     return requests.post(addr, data = json.dumps(data), headers={'content-type': 'application/json'})
+
+
+def Now_Str():
+    return str(datetime.datetime.now())
+
+def Parse_Date(x):
+    return parser.parse(x)
+
 
     
 

@@ -43,6 +43,7 @@ def monitor():
     print "This is the monitor thread"
     # TODO:
     # Implement the monitoring algorithm here, and notify controller use util.HTTP_Request
+    
     pass
 
 
@@ -60,5 +61,5 @@ def gen_topo():
 
 # MAIN
 gen_topo()
-# util.Set_Interval(monitor,config.MONITOR['CHECK_INTERVAL'])
+util.Set_Interval(monitor,config.MONITOR['CHECK_INTERVAL'])
 app.run(host='0.0.0.0', port=config.MONITOR['PORT'])
