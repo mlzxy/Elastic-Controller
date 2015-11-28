@@ -4,9 +4,8 @@ import util
 Traffic_Data = {}
 app = Flask(__name__)
 
-# topo_inited = False
-global topo_inited
 topo_inited = False
+
 
 
 @app.route("/")
@@ -19,14 +18,20 @@ def stat():
     statDict = request.get_json()
     # TODO:    
     # argment the Traffic_Data here
-    print "******"
-    print statDict
-    print "******"
+    # format of statDict:
+    # switches_traffic: {dpid: number of in packet, dpid: number of in packet, ...}
+    """
+    for switch in statDict.keys():
+        if switch in Traffic_Data.keys():
+            Traffic_Data[switch] += statDict[switch]
+        else:
+            Traffic_Data[switch] = statDict[switch]
+    """
 
     return jsonify(**{
         'success':True
     })
-
+    
     
 
 
@@ -37,29 +42,32 @@ def change_topo():
     # TODO:
     # update the Topology here
 
+
+
+
     print content, type(content)
 
 
 
 @app.route(config.MONITOR['METHODS']['TOPO_REPORT'][0],methods=[config.MONITOR['METHODS']['TOPO_REPORT'][1]])
 def gen_topo():
-    global topo_inited
-    # print "TOPO_REPORT"
+    # TODO:
+    # generate initial topology from config information
     content = request.get_json(silent=True)
-    # print content
-    Traffic_Data[content['ctrl']] = [{
-        'switch_id':id,
-        'traffic':{} ## TODO:
-        ## Design the traffic structure
-    }  for id in content['switches']]
 
-    if len(Traffic_Data) == len(config.CONTROLLERS):
-        for key in Traffic_Data:            
-            util.Http_Request(key + config.CONTROLLER['METHODS']['INIT_ROLE'][0],config.SWITCHES[key])
-            
-        topo_inited = True
-        print "Topology Inited"
-        
+    # print content
+    # if we have topology here, why do we need to relate the controller info with switch? {dpid: traffic, ...} should be OK.
+    Traffic_Data[content['ctrl']] = [{
+                                        'switch_id':id,
+                                        'traffic':{} ## TODO:
+                                                     ## Design the traffic structure
+                                      }  for id in content['switches']]
+    # read config file to get controller-master map
+
+    # notify controller to change the master-slave state, so the controller should have a data structure to keep state?
+
+
+
     return jsonify(**{
         'success':True
     })
@@ -67,11 +75,11 @@ def gen_topo():
 
 
 def monitor():
-    global topo_inited
     # print "This is the monitor thread"
     if topo_inited:
         # TODO:
         # Implement the monitoring algorithm here, and notify controller use util.HTTP_Request
+        # calculate the total traffic of each controller, if traffic data exceeds the threshold, then notify controller to migrate
         pass
     else:
         # if the topology is not inited, then do nothing
