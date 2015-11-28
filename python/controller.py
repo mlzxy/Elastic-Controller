@@ -105,7 +105,7 @@ class OurController(app_manager.RyuApp):
         self.collect_stat(ev)
         
         out = ofp_parser.OFPPacketOut(
-            datapath=dp, buffer_id=msg.buffer_id, in_port=msg.in_port,
+            datapath=dp, buffer_id=msg.buffer_id, in_port=msg.match['in_port'],
             actions=actions)
         dp.send_msg(out)
 
