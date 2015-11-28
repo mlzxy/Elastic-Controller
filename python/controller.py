@@ -84,6 +84,7 @@ class OurController(app_manager.RyuApp):
         pass
 
 
+
 class OurServer(ControllerBase):    
     def __init__(self, req, link, data, **config):
         super(OurServer, self).__init__(req, link, data, **config)
@@ -98,6 +99,28 @@ class OurServer(ControllerBase):
 
         
 
+    @route('OurController', config.CONTROLLER['METHODS']['MIGRATION_BEGIN'][0], methods=[config.CONTROLLER['METHODS']['MIGRATION_BEGIN'][1]])
+    def migration_begin(self, req, **kwargs):
+        # TODO
+        return Response(content_type='text/plain', body='migration_begin')
 
 
-    
+
+    @route('OurController', config.CONTROLLER['METHODS']['MIGRATION_READY'][0], methods=[config.CONTROLLER['METHODS']['MIGRATION_READY'][1]])
+    def migration_ready(self, req, **kwargs):
+        # TODO
+        return Response(content_type='text/plain', body='migration_ready')
+
+
+
+    @route('OurController', config.CONTROLLER['METHODS']['MIGRATION_END'][0], methods=[config.CONTROLLER['METHODS']['MIGRATION_END'][1]])
+    def migration_end(self, req, **kwargs):
+        # TODO
+        return Response(content_type='text/plain', body='migration_end')
+
+
+
+
+
+
+
