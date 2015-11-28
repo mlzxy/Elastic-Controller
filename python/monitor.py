@@ -60,8 +60,6 @@ def monitor():
 
 
 
-
-
 # MAIN
 gen_topo()
 util.Set_Interval(monitor,config.MONITOR['CHECK_INTERVAL'])
