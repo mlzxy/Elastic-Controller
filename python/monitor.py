@@ -4,9 +4,9 @@ import util
 Traffic_Data = {}
 app = Flask(__name__)
 
-topo_inited = False
-global topo_inited
 
+global topo_inited
+topo_inited = False
 
 @app.route("/")
 def hello():

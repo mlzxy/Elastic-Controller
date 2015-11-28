@@ -71,7 +71,8 @@ class OurController(app_manager.RyuApp):
         super(OurController, self).__init__(*args, **kwargs)
         wsgi = kwargs['wsgi']
         wsgi.register(OurServer, {'controller' : self})
-
+        self.role_inited = False
+        
         self.switches = {} # datapathId: datapathInstance
         self.switches_reported = False
         # submit results
@@ -99,7 +100,7 @@ class OurController(app_manager.RyuApp):
     def init_role(self, arr):
         for i in range(0,8):            
             self.send_role_request(i+1,arr[i])
- 
+        self.role_inited = True    
         
         
     def submit_stat(self):
@@ -140,7 +141,10 @@ class OurController(app_manager.RyuApp):
         dpid = dp.id;
         if not self.switches.has_key(dpid):
             self.switches[dpid] = dp;
-        
+            
+        if self.role_inited:
+            print "Datapath Id: ",dpid, " send PacketIn"
+            
         self.collect_stat(ev)
         
         out = ofp_parser.OFPPacketOut(
