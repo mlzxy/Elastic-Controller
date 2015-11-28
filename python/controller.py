@@ -14,7 +14,7 @@ from ryu.controller.handler import set_ev_cls
 from ryu.lib.packet import packet
 from ryu.lib.packet import ethernet
 from ryu.app.wsgi import ControllerBase, WSGIApplication, route
-from datetime import datetime
+# from datetime import datetime
 
 
 from ryu import cfg
@@ -26,33 +26,52 @@ CONTROLLER_ADDR = 'http://127.0.0.1:' + str(CONF['wsapi_port'])
 
 def http_send_stat(x):
     return util.Http_Request('http://127.0.0.1:'+str(config.MONITOR['PORT'])+str(config.MONITOR['METHODS']['STAT'][0]),x)
-    
+
+def http_send_switches_report(data):
+    return util.Http_Request('http:127.0.0.1:'+config.MONITOR['PORT']+config.MONITOR['METHODS']['TOPO_REPORT'][0],
+                             {
+                                 'ctrl':CONTROLLER_ADDR,
+                                'switches':data
+                             })
+
+
 
 
 class OurController(app_manager.RyuApp):
 
     _CONTEXTS = { 'wsgi': WSGIApplication }
+
+
     def __init__(self, *args, **kwargs):
         super(OurController, self).__init__(*args, **kwargs)
         wsgi = kwargs['wsgi']
         wsgi.register(OurServer, {'controller' : self})
 
+        self.switches = {} # datapathId: datapathInstance
+        self.switches_reported = False
         # submit results
         self.stat = {
             'from':util.Now_Str(),
             'ip':CONTROLLER_ADDR,
             'data':[]
-        };
+        }
         
         
         util.Set_Interval(self.submit_stat,config.CONTROLLER['STAT_SUBMIT_INTERVAL']);
 
     def submit_stat(self):
-        self.stat['to'] = util.Now_Str()
-        data_to_send = self.stat.copy()    
-        self.stat['from'] = util.Now_Str()
-        self.stat['data'] = []        
-        res = http_send_stat(data_to_send)
+        if(len(self.switches) < config.CONTROLLERS[0]['sn'] + config.CONTROLLERS[0]['sn']):
+            pass
+        else:
+            if self.switches_reported:
+                self.stat['to'] = util.Now_Str()
+                data_to_send = self.stat.copy()
+                self.stat['from'] = util.Now_Str()
+                self.stat['data'] = []
+                res = http_send_stat(data_to_send)
+            else:
+                http_send_switches_report(self.switches.keys())
+
         # submit the result
         
     def collect_stat(self,ev):
@@ -66,9 +85,16 @@ class OurController(app_manager.RyuApp):
         msg = ev.msg
         dp = msg.datapath
         ofp = dp.ofproto
-        ofp_parser = dp.ofproto_parser        
+        ofp_parser = dp.ofproto_parser
         actions = [ofp_parser.OFPActionOutput(ofp.OFPP_FLOOD)]
-        
+
+        dpid = dp.id;
+        if not self.switches.has_key(dpid):
+            self.switches[dpid] = dp;
+
+
+
+
         self.collect_stat(ev)
         
         out = ofp_parser.OFPPacketOut(

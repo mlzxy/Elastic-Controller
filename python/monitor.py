@@ -35,24 +35,25 @@ def change_topo():
 
 
 
-
-
-     
-
-def monitor():
-    print "This is the monitor thread"
-    # TODO:
-    # Implement the monitoring algorithm here, and notify controller use util.HTTP_Request
-    
-    pass
-
-
-
+topo_inited = False
+@app.route(config.MONITOR['METHODS']['TOPO_REPORT'][0],methods=config.MONITOR['METHODS']['TOPO_REPORT'][1])
 def gen_topo():
     # TODO:
     # generate initial topology from config information
-    
     pass
+
+
+
+def monitor():
+    print "This is the monitor thread"
+    if topo_inited:
+        # TODO:
+        # Implement the monitoring algorithm here, and notify controller use util.HTTP_Request
+        pass
+    else:
+        # if the topology is not inited, then do nothing
+        pass
+
 
 
 
