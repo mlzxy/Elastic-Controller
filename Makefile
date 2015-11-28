@@ -11,7 +11,12 @@ gui-topo:
 
 
 simple-net:
-	sudo mn --topo single,3 --mac --switch ovsk,protocols=openflow13 --controller remote
+	sudo mn --topo single,3 --mac --switch ovsk --controller remote
+
+simple-net-local:
+	sudo mn --topo single,3 --mac --switch ovsk
+
+
 
 
 ryu-hub-C1:
