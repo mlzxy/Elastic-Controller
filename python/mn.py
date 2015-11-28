@@ -18,6 +18,7 @@ import traceback
 import sys
 
 
+
 CustomController = None
 
 
@@ -84,11 +85,11 @@ def gnet():
     print "***** Starting Switches"
     counter = 1
     for swch in switches:
-        if counter <= Threshold:
-            swch.start([C1])
-        else:
-            swch.start([C2])
-        counter+=1    
+        # if counter <= Threshold:
+        swch.start([C1,C2])
+        # else:
+        # swch.start([C2])
+        # counter+=1
                 
     print "*** Testing network"
     # net.pingAll()

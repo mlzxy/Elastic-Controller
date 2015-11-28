@@ -24,7 +24,8 @@ MONITOR = {
     "PORT":9200,
     "METHODS":{
         "STAT":["/stat","POST"],
-        "FINISH_MIGRATION":["/change_topo","POST"]
+        "FINISH_MIGRATION":["/change_topo","POST"],
+        "TOPO_REPORT":["/report_topo","POST"]
     },
     "CHECK_INTERVAL":10         # seconds
 }
