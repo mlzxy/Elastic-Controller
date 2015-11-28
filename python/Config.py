@@ -33,7 +33,10 @@ MONITOR = {
 CONTROLLER = {
     'STAT_SUBMIT_INTERVAL':2,
     'METHODS':{
-        'START_MIGRATION':['/migrate','GET']        
+        'START_MIGRATION':['/migrate','GET'],
+	'MIGRATION_BEGIN':['/begin','GET'],
+	'MIGRATION_READY':['/ready','GET'],
+	'MIGRATION_END':['/end','GET']
     }
 }
 
