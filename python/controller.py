@@ -205,8 +205,10 @@ class OurServer(ControllerBase):
         return Response(content_type='text/plain', body='migration_end')
 
 
-
-
-
+#
+# API
+# req.json -> get json request
+# util.Http_Request(url,json) -> send json request
+# respond_json(json) -> reply a json
 
 
