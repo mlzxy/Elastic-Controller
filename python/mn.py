@@ -63,7 +63,7 @@ def gnet():
     for i in range(1,config['SWITCH_NUMBER']+1):        
         swchName = 'S'+str(i)
         print "***** Creating Switch: " + swchName
-        s = net.addSwitch(swchName)
+        s = net.addSwitch(swchName,protocols=["OpenFlow13"])
         switches.append(s)
         hosts = [ net.addHost((swchName +'_H%d') % n )
                   for n in

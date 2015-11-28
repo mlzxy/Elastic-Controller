@@ -1,7 +1,7 @@
 import json
 import logging
 
-from ryu.app import simple_switch
+from ryu.app import simple_switch_13
 from webob import Response
 from ryu.controller import ofp_event
 from ryu.controller.handler import CONFIG_DISPATCHER
@@ -12,7 +12,7 @@ from ryu.lib import dpid as dpid_lib
 simple_switch_instance_name = 'simple_switch_api_app'
 url = '/simpleswitch/mactable/{dpid}'
 
-class SimpleSwitchRest13(simple_switch.SimpleSwitch):
+class SimpleSwitchRest13(simple_switch_13.SimpleSwitch13):
 
     _CONTEXTS = { 'wsgi': WSGIApplication }
 

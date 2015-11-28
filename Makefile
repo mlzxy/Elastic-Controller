@@ -11,7 +11,7 @@ gui-topo:
 
 
 simple-net:
-	sudo mn --topo single,3 --mac --switch ovsk --controller remote
+	sudo mn --topo single,3 --mac --switch ovsk,protocols=openflow13 --controller remote
 
 
 ryu-hub-C1:
@@ -47,3 +47,5 @@ monitor:
 	python ./python/monitor.py
 
 
+sample-rest-api:
+	ryu-manager ./python/Samples/restApi.py
