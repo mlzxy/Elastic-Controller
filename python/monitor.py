@@ -1,10 +1,10 @@
-from flask import Flask,request,Response
+from flask import Flask,request,Response, jsonify
 import Config as config
 import util
 Traffic_Data = {}
-Topology = {}
 app = Flask(__name__)
 
+topo_inited = False
 
 
 
@@ -19,7 +19,9 @@ def stat():
     # TODO:    
     # argment the Traffic_Data here
 
-    return Response("1")
+    return jsonify(**{
+        'success':True
+    })
     
     
 
@@ -35,17 +37,27 @@ def change_topo():
 
 
 
-topo_inited = False
-@app.route(config.MONITOR['METHODS']['TOPO_REPORT'][0],methods=config.MONITOR['METHODS']['TOPO_REPORT'][1])
+@app.route(config.MONITOR['METHODS']['TOPO_REPORT'][0],methods=[config.MONITOR['METHODS']['TOPO_REPORT'][1]])
 def gen_topo():
     # TODO:
     # generate initial topology from config information
-    pass
+    content = request.get_json(silent=True)
+    # print content
+    Traffic_Data[content['ctrl']] = [{
+                                        'switch_id':id,
+                                        'traffic':{} ## TODO:
+                                                     ## Design the traffic structure
+                                      }  for id in content['switches']]
+
+
+    return jsonify(**{
+        'success':True
+    })
 
 
 
 def monitor():
-    print "This is the monitor thread"
+    # print "This is the monitor thread"
     if topo_inited:
         # TODO:
         # Implement the monitoring algorithm here, and notify controller use util.HTTP_Request
@@ -63,6 +75,6 @@ def monitor():
 
 
 # MAIN
-gen_topo()
+# gen_topo()
 util.Set_Interval(monitor,config.MONITOR['CHECK_INTERVAL'])
 app.run(host='0.0.0.0', port=config.MONITOR['PORT'])

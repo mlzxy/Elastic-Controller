@@ -1,7 +1,7 @@
 """
 Configuration
 """
-NODE_NUMBER_PER_SWITCH = 3      # N1-N5
+NODE_NUMBER_PER_SWITCH = 1      # N1-N5
 CONTROLLERS = [
     {
         'name':"C1",

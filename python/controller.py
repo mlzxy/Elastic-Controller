@@ -21,14 +21,14 @@ from ryu import cfg
 CONF = cfg.CONF
 CONTROLLER_ADDR = 'http://127.0.0.1:' + str(CONF['wsapi_port'])
 
-# import pdb
-# pdb.set_trace()
+import pdb
+#
 
 def http_send_stat(x):
     return util.Http_Request('http://127.0.0.1:'+str(config.MONITOR['PORT'])+str(config.MONITOR['METHODS']['STAT'][0]),x)
 
 def http_send_switches_report(data):
-    return util.Http_Request('http:127.0.0.1:'+config.MONITOR['PORT']+config.MONITOR['METHODS']['TOPO_REPORT'][0],
+    return util.Http_Request('http://127.0.0.1:'+str(config.MONITOR['PORT'])+config.MONITOR['METHODS']['TOPO_REPORT'][0],
                              {
                                  'ctrl':CONTROLLER_ADDR,
                                 'switches':data
@@ -59,6 +59,9 @@ class OurController(app_manager.RyuApp):
         
         util.Set_Interval(self.submit_stat,config.CONTROLLER['STAT_SUBMIT_INTERVAL']);
 
+    def send(self,dpid, opfmsg):
+        self.switches[dpid].send_msg(opfmsg)
+
     def submit_stat(self):
         if(len(self.switches) < config.CONTROLLERS[0]['sn'] + config.CONTROLLERS[0]['sn']):
             pass
@@ -70,7 +73,11 @@ class OurController(app_manager.RyuApp):
                 self.stat['data'] = []
                 res = http_send_stat(data_to_send)
             else:
-                http_send_switches_report(self.switches.keys())
+               r = http_send_switches_report(self.switches.keys())
+               result =  r.json()
+               self.switches_reported = result['success']
+               # self.switches_reported = True
+
 
         # submit the result
         
