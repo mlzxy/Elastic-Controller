@@ -49,3 +49,7 @@ monitor:
 
 sample-rest-api:
 	ryu-manager ./python/Samples/restApi.py
+
+
+shutdown:
+	killall -KILL python ryu-manager

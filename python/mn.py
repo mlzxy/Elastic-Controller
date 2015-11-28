@@ -16,7 +16,7 @@ from mininet.cli import CLI
 from mininet.log import setLogLevel
 import traceback
 import sys
-
+import random
 
 
 CustomController = None
@@ -83,13 +83,16 @@ def gnet():
 
 
     print "***** Starting Switches"
-    counter = 1
+    special = 2
+    counter = 0
     for swch in switches:
-        # if counter <= Threshold:
-        swch.start([C1,C2])
+        # if counter <= special:
+        #     print "Switch " + str(counter+1) + ": start with two controllers"            
+        #     swch.start([C1,C2])
         # else:
-        # swch.start([C2])
-        # counter+=1
+        #     swch.start([C1])
+        swch.start([C1,C2])
+        counter+=1
                 
     print "*** Testing network"
     # net.pingAll()

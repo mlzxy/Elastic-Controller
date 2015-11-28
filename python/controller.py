@@ -73,9 +73,10 @@ class OurController(app_manager.RyuApp):
                 self.stat['data'] = []
                 res = http_send_stat(data_to_send)
             else:
-               r = http_send_switches_report(self.switches.keys())
-               result =  r.json()
-               self.switches_reported = result['success']
+                print CONTROLLER_ADDR,": ",self.switches.keys()
+               # r = http_send_switches_report(self.switches.keys())
+               # result =  r.json()
+               # self.switches_reported = result['success']
                # self.switches_reported = True
 
 
