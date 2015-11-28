@@ -49,3 +49,7 @@ monitor:
 
 sample-rest-api:
 	ryu-manager ./python/Samples/restApi.py
+
+
+shutdown:
+	sudo killall -KILL python ryu-manager mn make

@@ -6,17 +6,21 @@ CONTROLLERS = [
     {
         'name':"C1",
         'ip':'127.0.0.1',
-        'port':6633,
-        'sn':4
+        'port':6633
     },
     {
         'name':"C2",
         'ip':'127.0.0.1',
-        'port':6634,
-        'sn':4
+        'port':6634
     }
 ]                 # sn1 + sn2 = 8
 
+SWITCHES = {
+    'http://127.0.0.1:8081':['s','s','s','m','m','m','m','m'],
+    'http://127.0.0.1:8080':['m','m','m','s','s','s','s','s']
+}
+
+SWITCH_NUMBER = 8
 
 
 
@@ -33,10 +37,11 @@ MONITOR = {
 CONTROLLER = {
     'STAT_SUBMIT_INTERVAL':2,
     'METHODS':{
-        'START_MIGRATION':['/migrate','GET'],
-	'MIGRATION_BEGIN':['/begin','GET'],
-	'MIGRATION_READY':['/ready','GET'],
-	'MIGRATION_END':['/end','GET']
+        'INIT_ROLE':['/init_role','POST'], # because the util.Http_Request only use POST
+        'START_MIGRATION':['/migrate','POST'],
+	'MIGRATION_BEGIN':['/begin','POST'],
+	'MIGRATION_READY':['/ready','POST'],
+	'MIGRATION_END':['/end','POST']
     }
 }
 

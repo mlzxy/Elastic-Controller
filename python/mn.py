@@ -54,7 +54,7 @@ def gnet():
     C1 = None
     C2 = None
     switches = []
-    Threshold = config['CONTROLLERS'][0]['sn']
+    # Threshold = config['CONTROLLERS'][0]['sn']
     C1 = GenController(net, config['CONTROLLERS'][0])
     C2 = GenController(net, config['CONTROLLERS'][1])    
     

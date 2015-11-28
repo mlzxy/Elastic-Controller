@@ -5,7 +5,7 @@ Traffic_Data = {}
 app = Flask(__name__)
 
 topo_inited = False
-
+global topo_inited
 
 
 @app.route("/")
@@ -22,7 +22,7 @@ def stat():
     return jsonify(**{
         'success':True
     })
-    
+
     
 
 
@@ -39,17 +39,23 @@ def change_topo():
 
 @app.route(config.MONITOR['METHODS']['TOPO_REPORT'][0],methods=[config.MONITOR['METHODS']['TOPO_REPORT'][1]])
 def gen_topo():
-    # TODO:
-    # generate initial topology from config information
+    global topo_inited
+    # print "TOPO_REPORT"
     content = request.get_json(silent=True)
     # print content
     Traffic_Data[content['ctrl']] = [{
-                                        'switch_id':id,
-                                        'traffic':{} ## TODO:
-                                                     ## Design the traffic structure
-                                      }  for id in content['switches']]
+        'switch_id':id,
+        'traffic':{} ## TODO:
+        ## Design the traffic structure
+    }  for id in content['switches']]
 
-
+    if len(Traffic_Data) == len(config.CONTROLLERS):
+        for key in Traffic_Data:            
+            util.Http_Request(key + config.CONTROLLER['METHODS']['INIT_ROLE'][0],config.SWITCHES[key])
+            
+        topo_inited = True
+        print "Topology Inited"
+        
     return jsonify(**{
         'success':True
     })
