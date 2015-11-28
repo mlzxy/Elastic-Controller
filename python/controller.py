@@ -14,18 +14,18 @@ from ryu.controller.handler import set_ev_cls
 from ryu.lib.packet import packet
 from ryu.lib.packet import ethernet
 from ryu.app.wsgi import ControllerBase, WSGIApplication, route
-from datetime import datetime
+# from datetime import datetime
 
 
 from ryu import cfg
 CONF = cfg.CONF
-CONTROLLER_ADDR = 'http://127.0.0.1:' + CONF['wsapi_port']
+CONTROLLER_ADDR = 'http://127.0.0.1:' + str(CONF['wsapi_port'])
 
 # import pdb
 # pdb.set_trace()
 
 def http_send_stat(x):
-    return util.Http_Request('http:127.0.0.1:'+config.MONITOR['PORT']+config.MONITOR['METHODS']['STAT'][0],x)
+    return util.Http_Request('http://127.0.0.1:'+str(config.MONITOR['PORT'])+str(config.MONITOR['METHODS']['STAT'][0]),x)
 
 def http_send_switches_report(data):
     return util.Http_Request('http:127.0.0.1:'+config.MONITOR['PORT']+config.MONITOR['METHODS']['TOPO_REPORT'][0],
@@ -33,6 +33,7 @@ def http_send_switches_report(data):
                                  'ctrl':CONTROLLER_ADDR,
                                 'switches':data
                              })
+
 
 
 
