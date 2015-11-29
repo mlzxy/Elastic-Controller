@@ -223,22 +223,24 @@ class OurController(app_manager.RyuApp):
         msg = ev.msg
         dp = msg.datapath
         ofp = dp.ofproto
+        jsonData = self.migrationData
 
         if self.migrationState == 1 and msg.role == ofp.OFPCR_ROLE_EQUAL:
             self.migrationState = 2  # enter phase 2
 
-            jsonData = self.migrationData
-
             url = jsonData['sourceController'] + str(config.CONTROLLER['METHODS']['MIGRATION_READY'][0])
             util.Http_Request(url, jsonData)   # send ready message back to source controller
             print "Migration ready, for switch: " + jsonData['targetSwitch'] + " from controller: " + jsonData['sourceController'] + " to controller: " + jsonData['targetController']
+        
+        if self.migrationState == 3 and msg.role == ofp.OFPCR_ROLE_MASTER:
+            url = jsonData['sourceController'] + str(config.CONTROLLER['METHODS']['MIGRATION_END'][0])
+            util.Http_Request(url, jsonData)   # send ready message back to source controller
 
-            
-        if self.migrationState == 3 and msg.role == ofp.OFPCR_ROLE_SLAVE:
-            print CONTROLLER_ADDR + " become slave of switch: " + str(dp.id)
             self.migrationState = 0
             self.migrationData = {}
-            
+            print "Migration end"
+
+
 
 
     @set_ev_cls(ofp_event.EventOFPBarrierReply, MAIN_DISPATCHER)
@@ -400,22 +402,26 @@ class OurServer(ControllerBase):
     @route('OurController', config.CONTROLLER['METHODS']['MIGRATION_END'][0], methods=[config.CONTROLLER['METHODS']['MIGRATION_END'][1]])
     def migration_end(self, req, **kwargs):
         jsonData = req.json
-        dpid = jsonData['targetSwitch']
 
-        datapath = self.controller.switches[int(dpid)]
-        print "set role: master for dpid " + str(dpid)
-        ofp = datapath.ofproto
-        ofp_parser = datapath.ofproto_parser        
-        req = ofp_parser.OFPRoleRequest(datapath, ofp.OFPCR_ROLE_MASTER, 0)   # request to become equal
-        datapath.send_msg(req)
+        if jsonData['targetController'] == CONTROLLER_ADDR:
+            dpid = jsonData['targetSwitch']
+            datapath = self.controller.switches[int(dpid)]            
+            ofp = datapath.ofproto
+            ofp_parser = datapath.ofproto_parser        
+            req = ofp_parser.OFPRoleRequest(datapath, ofp.OFPCR_ROLE_MASTER, 0)   # request to become master
+            datapath.send_msg(req)
+            print "set role: master for dpid " + str(dpid)
+            
+            url = "http://127.0.0.1:" + str(config.MONITOR['PORT']) + str(config.CONTROLLER['METHODS']['FINISH_MIGRATION'][0])
+            util.Http_Request(url, jsonData)            # tell the monitor to the change topo
+            
+            return Response(content_type='text/plain', body='migration_end')
 
-        self.controller.migrationState = 0
-        self.controller.migrationData = {}
+        elif jsonData['sourceController'] == CONTROLLER_ADDR:
+            self.controller.migrationState = 0
+            self.controller.migrationData = {}
 
-        url = "http://127.0.0.1:" + str(config.MONITOR['PORT']) + str(config.CONTROLLER['METHODS']['FINISH_MIGRATION'][0])
-        util.Http_Request(url, jsonData)
-
-        return Response(content_type='text/plain', body='migration_end')
+            
 
 
     
