@@ -26,7 +26,7 @@ CONF = cfg.CONF
 CONTROLLER_ADDR = 'http://127.0.0.1:' + str(CONF['wsapi_port'])
 
 import pdb
-#
+
 
 def http_send_stat(x):
     return util.Http_Request('http://127.0.0.1:'+str(config.MONITOR['PORT'])+str(config.MONITOR['METHODS']['STAT'][0]),x)
@@ -232,11 +232,13 @@ class OurController(app_manager.RyuApp):
             url = jsonData['sourceController'] + str(config.CONTROLLER['METHODS']['MIGRATION_READY'][0])
             util.Http_Request(url, jsonData)   # send ready message back to source controller
             print "Migration ready, for switch: " + jsonData['targetSwitch'] + " from controller: " + jsonData['sourceController'] + " to controller: " + jsonData['targetController']
-        
+
+            
         if self.migrationState == 3 and msg.role == ofp.OFPCR_ROLE_SLAVE:
+            print CONTROLLER_ADDR + " become slave of switch: " + str(dp.id)
             self.migrationState = 0
             self.migrationData = {}
-
+            
 
 
     @set_ev_cls(ofp_event.EventOFPBarrierReply, MAIN_DISPATCHER)
@@ -271,7 +273,10 @@ class OurController(app_manager.RyuApp):
             util.Http_Request(url, jsonData)   # send ready message back to source controller
             # self.send_role_request(jsonData['targetSwitch'], Constant["Role"]["Slave"])
             print "Migration end, for switch: " + jsonData['targetSwitch'] + " from controller: " + jsonData['sourceController'] + " to controller: " + jsonData['targetController']
-
+            
+            # print CONTROLLER_ADDR + " become slave of switch: " + jsonData['targetSwitch']
+            # self.migrationState = 0
+            # self.migrationData = {}
 
 
     @set_ev_cls(ofp_event.EventOFPFlowRemoved, MAIN_DISPATCHER)
@@ -412,6 +417,8 @@ class OurServer(ControllerBase):
 
         return Response(content_type='text/plain', body='migration_end')
 
+
+    
 
 #
 # API

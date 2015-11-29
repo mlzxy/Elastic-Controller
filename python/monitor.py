@@ -4,7 +4,8 @@ import util
 Traffic_Data = {}
 app = Flask(__name__)
 
-global topo_inited
+global topo_inited, changing_topo
+changing_topo = False
 topo_inited = False
 
 SWITCHES_ROLE = {}
@@ -45,6 +46,7 @@ def stat():
 @app.route(config.MONITOR['METHODS']['FINISH_MIGRATION'][0], methods=[config.MONITOR['METHODS']['FINISH_MIGRATION'][1]])
 def change_topo():
     content = request.get_json(silent=True)
+    changing_topo = False
     # TODO:
     # after migration, update the Topology here
     # source controller, destination controler, switch id
@@ -86,11 +88,11 @@ def gen_topo():
 
 
 def monitor():
-    global topo_inited
+    global topo_inited, changing_topo
     # print "This is the monitor thread"
     ctrls = Switch_traffic.keys()   
     # print "In the Monitor, Switch_Traffic",Switch_traffic
-    if topo_inited and len(ctrls) == len(config.CONTROLLERS):
+    if topo_inited and len(ctrls) == len(config.CONTROLLERS) and not changing_topo:
         # TODO:
         # Implement the monitoring algorithm here, and notify controller use util.HTTP_Request
         # {controller_ip: {switch_id: number,},}
@@ -133,6 +135,7 @@ def monitor():
             }
             print 'migrating: ',obj
             util.Http_Request(source_ctrl_ip + config.CONTROLLER['METHODS']['START_MIGRATION'][0], obj)
+            changing_topo = True
             # for testing
             # topo_inited = False
         
@@ -148,5 +151,5 @@ def monitor():
 
 # MAIN
 # gen_topo()
-util.Set_Interval(monitor,config.MONITOR['CHECK_INTERVAL'])
+util.Set_Interval(monitor,config.MONITOR['CHECK_INTERVAL'] * 2)
 app.run(host='0.0.0.0', port=config.MONITOR['PORT'])
