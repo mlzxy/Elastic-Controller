@@ -81,7 +81,9 @@ class OurController(app_manager.RyuApp):
             'data':[]
         }
         
-        
+        self.migrationState = 0  # mark whether this controller is in migration
+        self.migrationData  = {}
+
         util.Set_Interval(self.submit_stat,config.CONTROLLER['STAT_SUBMIT_INTERVAL']);
 
     def send(self,dpid, opfmsg):
@@ -131,6 +133,15 @@ class OurController(app_manager.RyuApp):
 
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def packet_in_handler(self, ev):
+        if self.migrationState == 1 || self.migrationState == 2:
+            if self.migrationData['targetController'] == CONTROLLER_ADDR:
+                return
+
+        if self.migrationState == 3:
+            if self.migrationData['sourceController'] == CONTROLLER_ADDR:
+                return
+
+
         msg = ev.msg
         dp = msg.datapath
         ofp = dp.ofproto
@@ -148,8 +159,76 @@ class OurController(app_manager.RyuApp):
             actions=actions)
         dp.send_msg(out)
 
-        
-        
+
+
+    @set_ev_cls(ofp_event.EventOFPRoleReply, MAIN_DISPATCHER)
+    def role_reply_handler(self, ev):
+        msg = ev.msg
+        dp = msg.datapath
+        ofp = dp.ofproto
+
+        if self.migrationState == 1 && msg.role == ofp.OFPCR_ROLE_EQUAL:
+            self.migrationState = 2  # enter phase 2
+
+            jsonData = self.migrationData
+
+            url = jsonData['sourceController'] + str(config.CONTROLLER['METHODS']['MIGRATION_READY'][0])
+            util.Http_Request(url, jsonData)   # send ready message back to source controller
+            print "Migration ready, for switch: " + jsonData['targetSwitch'] + " from controller: " + jsonData['sourceController'] + " to controller: " + jsonData['targetController']
+
+
+
+    @set_ev_cls(ofp_event.EventOFPBarrierReply, MAIN_DISPATCHER)
+    def barrier_reply_handler(self, ev):
+        if self.migrationState == 2:    # delete the dummy flow
+            msg = ev.msg
+            datapath = msg.datapath
+            ofp = datapath.ofproto
+            ofp_parser = datapath.ofproto_parser
+
+            cookie = cookie_mask = 0
+            table_id = 0
+            idle_timeout = hard_timeout = 0
+            priority = 32768
+            buffer_id = ofp.OFP_NO_BUFFER
+            match = ofp_parser.OFPMatch(in_port=1, eth_dst='ff:ff:ff:ff:ff:ff')
+            actions = [ofp_parser.OFPActionOutput(ofp.OFPP_NORMAL, 0)]
+            inst = [ofp_parser.OFPInstructionActions(ofp.OFPIT_APPLY_ACTIONS, actions)]
+    
+            req = ofp_parser.OFPFlowMod(datapath, cookie, cookie_mask,
+                                table_id, ofp.OFPFC_DELETE,
+                                idle_timeout, hard_timeout,
+                                priority, buffer_id,
+                                ofp.OFPP_ANY, ofp.OFPG_ANY,
+                                ofp.OFPFF_SEND_FLOW_REM,
+                                match, inst)
+            
+            datapath.send_msg(req)
+        elif self.migrationState == 3:
+            jsonData = self.migrationData
+            url = jsonData['targetController'] + str(config.CONTROLLER['METHODS']['MIGRATION_END'][0])
+            util.Http_Request(url, jsonData)   # send ready message back to source controller
+            print "Migration end, for switch: " + jsonData['targetSwitch'] + " from controller: " + jsonData['sourceController'] + " to controller: " + jsonData['targetController']
+
+            self.migrationState = 0
+            self.migrationData = {}
+
+
+
+    @set_ev_cls(ofp_event.EventOFPFlowRemoved, MAIN_DISPATCHER)
+    def flow_removed_handler(self, ev):
+        if self.migrationState == 2:
+            self.migrationState = 3
+
+            msg = ev.msg
+            datapath = msg.datapath
+            jsonData = self.migrationData
+            if jsonData['sourceController'] == CONTROLLER_ADDR:
+                ofp_parser = datapath.ofproto_parser
+                req = ofp_parser.OFPBarrierRequest(datapath)
+                datapath.send_msg(req)   # send a barrier request
+
+
 
     def migrate(self, *args, **kargs):        
         # TODO:
@@ -175,33 +254,99 @@ class OurServer(ControllerBase):
 
         
 
-        
-
     @route('OurController', config.CONTROLLER['METHODS']['START_MIGRATION'][0], methods=[config.CONTROLLER['METHODS']['START_MIGRATION'][1]])
     def start_migrate(self, req, **kwargs):
-        # TODO:
         # Start Migrating                
+        jsonData = {
+            sourceController: "",
+            targetController: "",  # IPs
+            targetSwitch: ""	   # switch I
+        }
+
+        self.controller.migrationState = 1
+        self.controller.migrationData = jsonData
+
+        url = jsonData['targetController'] + str(config.CONTROLLER['METHODS']['MIGRATION_BEGIN'][0])
+        util.Http_Request(url, jsonData)
+        print "start migration, for switch: " + jsonData['targetSwitch'] + " from controller: " + jsonData['sourceController'] + " to controller: " + jsonData['targetController']
+
         return Response(content_type='text/plain', body='helloworld')
 
         
 
     @route('OurController', config.CONTROLLER['METHODS']['MIGRATION_BEGIN'][0], methods=[config.CONTROLLER['METHODS']['MIGRATION_BEGIN'][1]])
     def migration_begin(self, req, **kwargs):
-        # TODO
+        jsonData = req.json             # receive request from source controller
+        dpid = jsonData['targetSwitch']
+
+        self.controller.migration = 1   # mark that this controller is in migration
+        self.controller.migrationData = jsonData
+ 
+        datapath = self.controller.switches[dpid]
+        print "set role: Equal for dpid " + str(dpid)
+        ofp = datapath.ofproto
+        ofp_parser = datapath.ofproto_parser        
+        req = ofp_parser.OFPRoleRequest(datapath, ofp.OFPCR_ROLE_EQUAL, 0)   # request to become equal
+        datapath.send_msg(req)
+
         return Response(content_type='text/plain', body='migration_begin')
 
 
 
     @route('OurController', config.CONTROLLER['METHODS']['MIGRATION_READY'][0], methods=[config.CONTROLLER['METHODS']['MIGRATION_READY'][1]])
     def migration_ready(self, req, **kwargs):
-        # TODO
-        return Response(content_type='text/plain', body='migration_ready')
+        if self.controller.migrationState == 1:
+            self.controller.migrationState = 2   # enter second phase
+
+            jsonData = req.json
+            dpid = jsonData['targetSwitch']
+            datapath = self.controller.switches[dpid]
+            ofp = datapath.ofproto
+            ofp_parser = datapath.ofproto_parser
+
+    	    cookie = cookie_mask = 0
+    	    table_id = 0
+    	    idle_timeout = hard_timeout = 60
+    	    priority = 32768
+    	    buffer_id = ofp.OFP_NO_BUFFER
+    	    match = ofp_parser.OFPMatch(in_port=1, eth_dst='ff:ff:ff:ff:ff:ff')
+    	    actions = [ofp_parser.OFPActionOutput(ofp.OFPP_NORMAL, 0)]
+    	    inst = [ofp_parser.OFPInstructionActions(ofp.OFPIT_APPLY_ACTIONS, actions)]
+
+            req = ofp_parser.OFPFlowMod(datapath, cookie, cookie_mask,
+                                table_id, ofp.OFPFC_ADD,
+                                idle_timeout, hard_timeout,
+                                priority, buffer_id,
+                                ofp.OFPP_ANY, ofp.OFPG_ANY,
+                                ofp.OFPFF_SEND_FLOW_REM,
+                                match, inst)
+    	    datapath.send_msg(req)   # add a flow to the switch
+            print "dummy add flow operation, for switch: " + jsonData['targetSwitch'] + " from controller: " + jsonData['sourceController']
+
+            ofp_parser = datapath.ofproto_parser
+            req = ofp_parser.OFPBarrierRequest(datapath)
+            datapath.send_msg(req)   # send a barrier request
+            print "Barrier message sent"
+
+            return Response(content_type='text/plain', body='migration_ready')
 
 
 
     @route('OurController', config.CONTROLLER['METHODS']['MIGRATION_END'][0], methods=[config.CONTROLLER['METHODS']['MIGRATION_END'][1]])
     def migration_end(self, req, **kwargs):
-        # TODO
+        jsonData = req.json
+        dpid = jsonData['targetSwitch']
+
+        datapath = self.controller.switches[dpid]
+        print "set role: master for dpid " + str(dpid)
+        ofp = datapath.ofproto
+        ofp_parser = datapath.ofproto_parser        
+        req = ofp_parser.OFPRoleRequest(datapath, ofp.OFPCR_ROLE_MASTER, 0)   # request to become equal
+        datapath.send_msg(req)
+
+        self.controller.migrationState = 0
+        self.controller.migrationData = {}
+
         return Response(content_type='text/plain', body='migration_end')
 
 
