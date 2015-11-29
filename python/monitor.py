@@ -4,8 +4,9 @@ import util
 Traffic_Data = {}
 app = Flask(__name__)
 
-topo_inited = False
+# topo_inited = False
 global topo_inited
+topo_inited = False
 
 
 @app.route("/")
@@ -18,6 +19,9 @@ def stat():
     statDict = request.get_json()
     # TODO:    
     # argment the Traffic_Data here
+    print "******"
+    print statDict
+    print "******"
 
     return jsonify(**{
         'success':True
@@ -63,6 +67,7 @@ def gen_topo():
 
 
 def monitor():
+    global topo_inited
     # print "This is the monitor thread"
     if topo_inited:
         # TODO:

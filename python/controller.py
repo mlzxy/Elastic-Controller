@@ -8,13 +8,14 @@ import util
 import json
 import logging
 
+from ryu.lib.mac import haddr_to_bin
 from ryu import ofproto
 from ryu.base import app_manager
 from ryu.controller import ofp_event
 from ryu.controller.handler import MAIN_DISPATCHER
 from ryu.controller.handler import set_ev_cls
 from ryu.lib.packet import packet
-from ryu.lib.packet import ethernet
+from ryu.lib.packet import ethernet, ether_types
 from ryu.app.wsgi import ControllerBase, WSGIApplication, route
 # from attrdict import AttrDict
 # from datetime import datetime
@@ -84,6 +85,11 @@ class OurController(app_manager.RyuApp):
         self.migrationState = 0  # mark whether this controller is in migration
         self.migrationData  = {}
 
+        # switch traffic: in-package number
+        self.switch_traffic = {}
+        self.mac_to_port = {}
+        self.role_inited = False
+        
         util.Set_Interval(self.submit_stat,config.CONTROLLER['STAT_SUBMIT_INTERVAL']);
 
     def send(self,dpid, opfmsg):
@@ -101,36 +107,93 @@ class OurController(app_manager.RyuApp):
     def init_role(self, arr):
         for i in range(0,8):            
             self.send_role_request(i+1,arr[i])
- 
+        self.role_inited = True
         
         
     def submit_stat(self):
         if(len(self.switches) < config.SWITCH_NUMBER):
+            print "switch info has not been sent to controller yet!!"
             pass
         else:
-            if self.switches_reported:
+            if self.role_inited:
+                data_to_send = self.switch_traffic.copy()
+                res = http_send_stat(data_to_send)
+                self.switch_traffic = {}
+                """
                 self.stat['to'] = util.Now_Str()
                 data_to_send = self.stat.copy()
                 self.stat['from'] = util.Now_Str()
                 self.stat['data'] = []
                 res = http_send_stat(data_to_send)
+                """
             else:
+                #print "switch role is not assigned!!"
+                #pass
                 k = self.switches.keys()
-                print k
-                r = http_send_switches_report(k)
-                result =  r.json()
-                self.switches_reported = result['success']
+               # print k
+                http_send_switches_report(k)
+               # result =  r.json()
+               # self.switches_reported = result['success']
                # self.switches_reported = True
 
 
         # submit the result
         
     def collect_stat(self,ev):
-        # TODO:
-        # Collect the temporary stat
-        pass
-        
+        if(len(self.switches) < config.SWITCH_NUMBER):
+            pass
+            # don't know all the switch id, so don't collect data
+        else:
+            if self.role_inited:
+                msg = ev.msg
+                dp = msg.datapath
+                dpid = dp.id
+                if self.switch_traffic.has_key(dpid):
+                    self.switch_traffic[dpid] = self.switch_traffic[dpid] + 1
+                else:
+                    self.switch_traffic[dpid] = 1
+            else:
+                # role not assigned, not neccessary to collect data
+                pass
 
+        
+    def add_flow(self, datapath, in_port, dst, actions):
+        ofproto = datapath.ofproto
+        match = datapath.ofproto_parser.OFPMatch(
+            in_port=in_port, dl_dst=haddr_to_bin(dst))
+
+        mod = datapath.ofproto_parser.OFPFlowMod(
+            datapath=datapath, match=match, cookie=0,
+            command=ofproto.OFPFC_ADD, idle_timeout=0, hard_timeout=0,
+            priority=ofproto.OFP_DEFAULT_PRIORITY,
+            flags=ofproto.OFPFF_SEND_FLOW_REM, actions=actions)
+        datapath.send_msg(mod)
+        
+    def get_actions(self,ev):
+        # get a good action
+        msg = ev.msg
+        dp = msg.datapath
+        ofp = dp.ofproto
+        ofp_parser = dp.ofproto_parser
+        pkt = packet.Packet(msg.data)
+        dpid = dp.id;
+        eth = pkt.get_protocol(ethernet.ethernet)
+        if eth.ethertype == ether_types.ETH_TYPE_LLDP: # ignore lldp packet     
+            return
+        dst = eth.dst
+        src = eth.src        
+        self.mac_to_port.setdefault(dpid, {})
+        self.mac_to_port[dpid][src] = msg.match['in_port']
+        if dst in self.mac_to_port[dpid]:
+            out_port = self.mac_to_port[dpid][dst]
+        else:
+            out_port = ofp.OFPP_FLOOD
+        actions = [ofp_parser.OFPActionOutput(out_port)]
+        # if out_port != ofp.OFPP_FLOOD:
+        #     self.add_flow(dp, msg.in_port, dst, actions)
+        return actions
+        
+        
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def packet_in_handler(self, ev):
         if self.migrationState == 1 || self.migrationState == 2:
@@ -144,15 +207,19 @@ class OurController(app_manager.RyuApp):
 
         msg = ev.msg
         dp = msg.datapath
-        ofp = dp.ofproto
         ofp_parser = dp.ofproto_parser
-        actions = [ofp_parser.OFPActionOutput(ofp.OFPP_FLOOD)]
+        
 
         dpid = dp.id;
         if not self.switches.has_key(dpid):
             self.switches[dpid] = dp;
         
         self.collect_stat(ev)
+
+        # get a good action
+        actions = self.get_actions(ev)
+        # if out_port != ofp.OFPP_FLOOD:
+        #     self.add_flow(dp, msg.in_port, dst, actions)
         
         out = ofp_parser.OFPPacketOut(
             datapath=dp, buffer_id=msg.buffer_id, in_port=msg.match['in_port'],
