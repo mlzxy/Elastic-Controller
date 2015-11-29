@@ -8,13 +8,14 @@ import util
 import json
 import logging
 
+from ryu.lib.mac import haddr_to_bin
 from ryu import ofproto
 from ryu.base import app_manager
 from ryu.controller import ofp_event
 from ryu.controller.handler import MAIN_DISPATCHER
 from ryu.controller.handler import set_ev_cls
 from ryu.lib.packet import packet
-from ryu.lib.packet import ethernet
+from ryu.lib.packet import ethernet, ether_types
 from ryu.app.wsgi import ControllerBase, WSGIApplication, route
 # from attrdict import AttrDict
 # from datetime import datetime
@@ -82,7 +83,7 @@ class OurController(app_manager.RyuApp):
         }
         # switch traffic: in-package number
         self.switch_traffic = {}
-       
+        self.mac_to_port = {}
         self.role_inited = False
         
         util.Set_Interval(self.submit_stat,config.CONTROLLER['STAT_SUBMIT_INTERVAL']);
@@ -152,20 +153,60 @@ class OurController(app_manager.RyuApp):
                 pass
 
         
+    def add_flow(self, datapath, in_port, dst, actions):
+        ofproto = datapath.ofproto
+        match = datapath.ofproto_parser.OFPMatch(
+            in_port=in_port, dl_dst=haddr_to_bin(dst))
 
-    @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
-    def packet_in_handler(self, ev):
+        mod = datapath.ofproto_parser.OFPFlowMod(
+            datapath=datapath, match=match, cookie=0,
+            command=ofproto.OFPFC_ADD, idle_timeout=0, hard_timeout=0,
+            priority=ofproto.OFP_DEFAULT_PRIORITY,
+            flags=ofproto.OFPFF_SEND_FLOW_REM, actions=actions)
+        datapath.send_msg(mod)
+        
+    def get_actions(self,ev):
+        # get a good action
         msg = ev.msg
         dp = msg.datapath
         ofp = dp.ofproto
         ofp_parser = dp.ofproto_parser
-        actions = [ofp_parser.OFPActionOutput(ofp.OFPP_FLOOD)]
+        pkt = packet.Packet(msg.data)
+        dpid = dp.id;
+        eth = pkt.get_protocol(ethernet.ethernet)
+        if eth.ethertype == ether_types.ETH_TYPE_LLDP: # ignore lldp packet     
+            return
+        dst = eth.dst
+        src = eth.src        
+        self.mac_to_port.setdefault(dpid, {})
+        self.mac_to_port[dpid][src] = msg.match['in_port']
+        if dst in self.mac_to_port[dpid]:
+            out_port = self.mac_to_port[dpid][dst]
+        else:
+            out_port = ofp.OFPP_FLOOD
+        actions = [ofp_parser.OFPActionOutput(out_port)]
+        # if out_port != ofp.OFPP_FLOOD:
+        #     self.add_flow(dp, msg.in_port, dst, actions)
+        return actions
+        
+        
+    @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
+    def packet_in_handler(self, ev):
+        msg = ev.msg
+        dp = msg.datapath
+        ofp_parser = dp.ofproto_parser
+        
 
         dpid = dp.id;
         if not self.switches.has_key(dpid):
             self.switches[dpid] = dp;
         
         self.collect_stat(ev)
+
+        # get a good action
+        actions = self.get_actions(ev)
+        # if out_port != ofp.OFPP_FLOOD:
+        #     self.add_flow(dp, msg.in_port, dst, actions)
         
         out = ofp_parser.OFPPacketOut(
             datapath=dp, buffer_id=msg.buffer_id, in_port=msg.match['in_port'],
