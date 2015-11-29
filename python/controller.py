@@ -183,6 +183,8 @@ class OurController(app_manager.RyuApp):
         
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def packet_in_handler(self, ev):
+        print "migration state: ", self.migrationState
+
         if self.migrationState == 1 or self.migrationState == 2:
             if self.migrationData['targetController'] == CONTROLLER_ADDR:
                 return
@@ -191,12 +193,9 @@ class OurController(app_manager.RyuApp):
             if self.migrationData['sourceController'] == CONTROLLER_ADDR:
                 return
 
-
         msg = ev.msg
         dp = msg.datapath
         ofp_parser = dp.ofproto_parser
-        
-        
         
         dpid = dp.id;
         print "packet from switch id: ", dpid
@@ -231,6 +230,10 @@ class OurController(app_manager.RyuApp):
             url = jsonData['sourceController'] + str(config.CONTROLLER['METHODS']['MIGRATION_READY'][0])
             util.Http_Request(url, jsonData)   # send ready message back to source controller
             print "Migration ready, for switch: " + jsonData['targetSwitch'] + " from controller: " + jsonData['sourceController'] + " to controller: " + jsonData['targetController']
+        
+        if self.migrationState == 3 and msg.role == ofp.OFPCR_ROLE_SLAVE:
+            self.migrationState = 0
+            self.migrationData = {}
 
 
 
@@ -266,9 +269,6 @@ class OurController(app_manager.RyuApp):
             util.Http_Request(url, jsonData)   # send ready message back to source controller
             # self.send_role_request(jsonData['targetSwitch'], Constant["Role"]["Slave"])
             print "Migration end, for switch: " + jsonData['targetSwitch'] + " from controller: " + jsonData['sourceController'] + " to controller: " + jsonData['targetController']
-
-            self.migrationState = 0
-            self.migrationData = {}
 
 
 
@@ -404,6 +404,9 @@ class OurServer(ControllerBase):
 
         self.controller.migrationState = 0
         self.controller.migrationData = {}
+
+        url = "http://127.0.0.1:" + str(config.MONITOR['PORT']) + str(config.CONTROLLER['METHODS']['FINISH_MIGRATION'][0])
+        util.Http_Request(url, jsonData)
 
         return Response(content_type='text/plain', body='migration_end')
 
