@@ -30,8 +30,8 @@ def stat():
     # copy traffic info from statDict to Switch_traffic
     # format of Switch_traffic:
     # {controller_ip: {switch_id: number,},}
-    #if len(Switch_traffic) == len(config.CONTROLLERS):
-    #    Switch_traffic = {}
+    if len(Switch_traffic) == len(config.CONTROLLERS):
+        Switch_traffic = {}
     Switch_traffic[statDict['ip']] = statDict['traffic']
 
 
@@ -56,7 +56,7 @@ def change_topo():
 
 @app.route(config.MONITOR['METHODS']['TOPO_REPORT'][0],methods=[config.MONITOR['METHODS']['TOPO_REPORT'][1]])
 def gen_topo():
-    global topo_inited, Switch_traffic
+    global topo_inited
     # print "TOPO_REPORT"
     content = request.get_json(silent=True)
 
@@ -88,19 +88,14 @@ def gen_topo():
 def monitor():
     global topo_inited
     # print "This is the monitor thread"
-    ctrls = Switch_traffic.keys()   
-    print "In the Monitor, Switch_Traffic",Switch_traffic
-    if topo_inited and len(ctrls) == len(config.CONTROLLERS):
+    if topo_inited:
         # TODO:
         # Implement the monitoring algorithm here, and notify controller use util.HTTP_Request
         # {controller_ip: {switch_id: number,},}
         sum1 = 0
         sum2 = 0
-        # print Switch_traffic
-
-
-        controller_ip_1 = ctrls[0]
-        controller_ip_2 = ctrls[1]
+        controller_ip_1 = Switch_traffic.keys()[0]
+        controller_ip_2 = Switch_traffic.keys()[1]
         for key in Switch_traffic[controller_ip_1]:
             sum1 += Switch_traffic[controller_ip_1][key]
         for key in Switch_traffic[controller_ip_2]:
@@ -116,23 +111,16 @@ def monitor():
             dest_ctrl_ip = controller_ip_1
             smaller = sum1
 
-        if (delta + 0.0) / smaller > -0.5:        
+        if (delta + 0.0) / smaller > 0.5:
             # migrate
             nearest_switch_id = ''
             minimum = 9999
             for key in Switch_traffic[source_ctrl_ip]:
-                distance = abs(Switch_traffic[source_ctrl_ip][key] - delta / 2)
+                distance = abs(Switch_traffic[source_ctrl_ip] - delta / 2)
                 if minimum > distance:
                     nearest_switch_id = key
                     minimum = distance
             # start migration
-            obj = {
-                'source':source_ctrl_ip,
-                'dest':dest_ctrl_ip,
-                'switch':nearest_switch_id
-            }
-            print 'migrating: ',obj
-            util.Http_Request(source_ctrl_ip + config.CONTROLLER['METHODS']['START_MIGRATION'][0], obj)   
             
         
     else:
