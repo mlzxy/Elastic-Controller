@@ -143,10 +143,10 @@ class OurController(app_manager.RyuApp):
                 msg = ev.msg
                 dp = msg.datapath
                 dpid = dp.id
-                if not self.switches.has_key(dp):
-                    self.switch_traffic[dpid] = 1
+                if self.switch_traffic.has_key(dpid):
+                    self.switch_traffic[dpid] = self.switch_traffic[dpid] + 1
                 else:
-                    self.switch_traffic[dpid] += 1
+                    self.switch_traffic[dpid] = 1
             else:
                 # role not assigned, not neccessary to collect data
                 pass
