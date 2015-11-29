@@ -199,7 +199,7 @@ class OurController(app_manager.RyuApp):
         
         
         dpid = dp.id;
-        # print "packet from switch id: ", dpid
+        print "packet from switch id: ", dpid
         if not self.switches.has_key(dpid):
             self.switches[dpid] = dp;
         
@@ -333,7 +333,7 @@ class OurServer(ControllerBase):
         jsonData = req.json             # receive request from source controller
         dpid = jsonData['targetSwitch']
 
-        self.controller.migration = 1   # mark that this controller is in migration
+        self.controller.migrationState = 1   # mark that this controller is in migration
         self.controller.migrationData = jsonData
  
         datapath = self.controller.switches[int(dpid)]
@@ -349,9 +349,13 @@ class OurServer(ControllerBase):
 
     @route('OurController', config.CONTROLLER['METHODS']['MIGRATION_READY'][0], methods=[config.CONTROLLER['METHODS']['MIGRATION_READY'][1]])
     def migration_ready(self, req, **kwargs):
-        if self.controller.migrationState == 1:
-            self.controller.migrationState = 2   # enter second phase
+        print "reach migration ready"
+        print "controler.migrationState = ", self.controller.migrationState
 
+        if self.controller.migrationState == 1:
+            print "  enter migration ready"
+            self.controller.migrationState = 2   # enter second phase
+            
             jsonData = req.json
             dpid = jsonData['targetSwitch']
             datapath = self.controller.switches[int(dpid)]

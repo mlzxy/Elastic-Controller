@@ -134,7 +134,7 @@ def monitor():
             print 'migrating: ',obj
             util.Http_Request(source_ctrl_ip + config.CONTROLLER['METHODS']['START_MIGRATION'][0], obj)
             # for testing
-            topo_inited = False
+            # topo_inited = False
         
     else:
         # if the topology is not inited, then do nothing
