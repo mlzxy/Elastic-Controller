@@ -99,7 +99,7 @@ class OurController(app_manager.RyuApp):
 
         
     def send_role_request(self, dpid, role):        
-        datapath = self.switches[dpid]
+        datapath = self.switches[int(dpid)]
         print "set role: " + str(role) + " for dpid " + str(dpid)
         ofp = datapath.ofproto
         ofp_parser = datapath.ofproto_parser        
@@ -196,8 +196,10 @@ class OurController(app_manager.RyuApp):
         dp = msg.datapath
         ofp_parser = dp.ofproto_parser
         
-
+        
+        
         dpid = dp.id;
+        # print "packet from switch id: ", dpid
         if not self.switches.has_key(dpid):
             self.switches[dpid] = dp;
         
@@ -262,6 +264,7 @@ class OurController(app_manager.RyuApp):
             jsonData = self.migrationData
             url = jsonData['targetController'] + str(config.CONTROLLER['METHODS']['MIGRATION_END'][0])
             util.Http_Request(url, jsonData)   # send ready message back to source controller
+            # self.send_role_request(jsonData['targetSwitch'], Constant["Role"]["Slave"])
             print "Migration end, for switch: " + jsonData['targetSwitch'] + " from controller: " + jsonData['sourceController'] + " to controller: " + jsonData['targetController']
 
             self.migrationState = 0
@@ -297,16 +300,9 @@ class OurServer(ControllerBase):
         self.controller = data['controller']
 
     @route('OurController', config.CONTROLLER['METHODS']['INIT_ROLE'][0], methods=[config.CONTROLLER['METHODS']['INIT_ROLE'][1]])
-    def init_role(self, req, **kwargs):
-        # TODO:
-        # print req.method,req.POST,kwargs
-        print "@@@@@"
-        print req.json
-        print "@@@@@"
-        
+    def init_role(self, req, **kwargs):        
         self.controller.init_role([get_role(i)
-                                   for i in req.json])
-        
+                                   for i in req.json])        
         return respond_json({'success':True})
 
         

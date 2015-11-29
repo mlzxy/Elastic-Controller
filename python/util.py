@@ -4,6 +4,8 @@ import json
 import datetime
 from dateutil  import parser
 
+import logging
+logging.getLogger("requests").setLevel(logging.WARNING)
 
 def Set_Interval(func, sec):
     def func_wrapper():

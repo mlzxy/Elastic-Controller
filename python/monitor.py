@@ -21,9 +21,9 @@ def stat():
     statDict = request.get_json()
     # TODO:    
     # argment the Traffic_Data here
-    print "******"
-    print statDict
-    print "******"
+    # print "******"
+    # print statDict
+    # print "******"
     # format of statDict:
     # {u'ip': u'http://127.0.0.1:8080', u'traffic': {u'1': 9, u'3': 9, u'2': 9}}
 
@@ -89,7 +89,7 @@ def monitor():
     global topo_inited
     # print "This is the monitor thread"
     ctrls = Switch_traffic.keys()   
-    print "In the Monitor, Switch_Traffic",Switch_traffic
+    # print "In the Monitor, Switch_Traffic",Switch_traffic
     if topo_inited and len(ctrls) == len(config.CONTROLLERS):
         # TODO:
         # Implement the monitoring algorithm here, and notify controller use util.HTTP_Request
@@ -132,8 +132,9 @@ def monitor():
                 'switch':nearest_switch_id
             }
             print 'migrating: ',obj
-            util.Http_Request(source_ctrl_ip + config.CONTROLLER['METHODS']['START_MIGRATION'][0], obj)   
-            
+            util.Http_Request(source_ctrl_ip + config.CONTROLLER['METHODS']['START_MIGRATION'][0], obj)
+            # for testing
+            topo_inited = False
         
     else:
         # if the topology is not inited, then do nothing
