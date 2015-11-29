@@ -82,7 +82,9 @@ class OurController(app_manager.RyuApp):
             'data':[]
         }
         # switch traffic: in-package number
-        self.switch_traffic = {}
+        # format:
+        # switch_traffic = {'ip': CONTROLLER_ADDR, 'traffic': {}}
+        self.switch_traffic = {'ip': CONTROLLER_ADDR, 'traffic': {}}
         self.mac_to_port = {}
         self.role_inited = False
         
@@ -114,26 +116,11 @@ class OurController(app_manager.RyuApp):
             if self.role_inited:
                 data_to_send = self.switch_traffic.copy()
                 res = http_send_stat(data_to_send)
-                self.switch_traffic = {}
-                """
-                self.stat['to'] = util.Now_Str()
-                data_to_send = self.stat.copy()
-                self.stat['from'] = util.Now_Str()
-                self.stat['data'] = []
-                res = http_send_stat(data_to_send)
-                """
+                self.switch_traffic = {'ip': CONTROLLER_ADDR, 'traffic': {}}
             else:
-                #print "switch role is not assigned!!"
-                #pass
                 k = self.switches.keys()
-               # print k
                 http_send_switches_report(k)
-               # result =  r.json()
-               # self.switches_reported = result['success']
-               # self.switches_reported = True
 
-
-        # submit the result
         
     def collect_stat(self,ev):
         if(len(self.switches) < config.SWITCH_NUMBER):
@@ -144,10 +131,10 @@ class OurController(app_manager.RyuApp):
                 msg = ev.msg
                 dp = msg.datapath
                 dpid = dp.id
-                if self.switch_traffic.has_key(dpid):
-                    self.switch_traffic[dpid] = self.switch_traffic[dpid] + 1
+                if self.switch_traffic['traffic'].has_key(dpid):
+                    self.switch_traffic['traffic'][dpid] = self.switch_traffic['traffic'][dpid] + 1
                 else:
-                    self.switch_traffic[dpid] = 1
+                    self.switch_traffic['traffic'][dpid] = 1
             else:
                 # role not assigned, not neccessary to collect data
                 pass
@@ -232,6 +219,9 @@ class OurServer(ControllerBase):
     def init_role(self, req, **kwargs):
         # TODO:
         # print req.method,req.POST,kwargs
+        print "@@@@@"
+        print req.json
+        print "@@@@@"
         
         self.controller.init_role([get_role(i)
                                    for i in req.json])
