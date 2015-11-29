@@ -184,20 +184,22 @@ class OurController(app_manager.RyuApp):
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def packet_in_handler(self, ev):
         print "migration state: ", self.migrationState
-
-        if self.migrationState == 1 or self.migrationState == 2:
-            if self.migrationData['targetController'] == CONTROLLER_ADDR:
-                return
-
-        if self.migrationState == 3:
-            if self.migrationData['sourceController'] == CONTROLLER_ADDR:
-                return
-
+        
         msg = ev.msg
         dp = msg.datapath
         ofp_parser = dp.ofproto_parser
-        
-        dpid = dp.id;
+        dpid = dp.id
+
+        if self.migrationData.has_key('targetSwitch') and int(self.migrationData['targetSwitch']) == int(dpid):
+            if self.migrationState == 1 or self.migrationState == 2:
+                if self.migrationData['targetController'] == CONTROLLER_ADDR:
+                    return
+
+            elif self.migrationState == 3:
+                if self.migrationData['sourceController'] == CONTROLLER_ADDR:
+                    return
+
+
         print "packet from switch id: ", dpid
         if not self.switches.has_key(dpid):
             self.switches[dpid] = dp;
