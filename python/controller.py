@@ -199,8 +199,8 @@ class OurController(app_manager.RyuApp):
                 if self.migrationData['sourceController'] == CONTROLLER_ADDR:
                     return
 
-        print "migration state: ", self.migrationState
-        print "packet from switch id: ", dpid
+        # print "migration state: ", self.migrationState
+        # print "packet from switch id: ", dpid
         if not self.switches.has_key(dpid):
             self.switches[dpid] = dp;
         
@@ -413,7 +413,6 @@ class OurServer(ControllerBase):
             print "set role: master for dpid " + str(dpid)
             
             url = "http://127.0.0.1:" + str(config.MONITOR['PORT']) + str(config.MONITOR['METHODS']['FINISH_MIGRATION'][0])
-            print url
             util.Http_Request(url, jsonData)            # tell the monitor to the change topo
             
             return Response(content_type='text/plain', body='migration_end')
