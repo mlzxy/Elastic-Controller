@@ -46,6 +46,7 @@ def stat():
 @app.route(config.MONITOR['METHODS']['FINISH_MIGRATION'][0], methods=[config.MONITOR['METHODS']['FINISH_MIGRATION'][1]])
 def change_topo():
     content = request.get_json(silent=True)
+    global changing_topo
     changing_topo = False
     # TODO:
     # after migration, update the Topology here
@@ -89,6 +90,7 @@ def gen_topo():
 
 def monitor():
     global topo_inited, changing_topo
+    print "this is the monitor"
     # print "This is the monitor thread"
     ctrls = Switch_traffic.keys()   
     # print "In the Monitor, Switch_Traffic",Switch_traffic

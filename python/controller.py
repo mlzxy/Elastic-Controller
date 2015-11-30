@@ -183,7 +183,7 @@ class OurController(app_manager.RyuApp):
         
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def packet_in_handler(self, ev):
-        print "migration state: ", self.migrationState
+
         
         msg = ev.msg
         dp = msg.datapath
@@ -199,7 +199,7 @@ class OurController(app_manager.RyuApp):
                 if self.migrationData['sourceController'] == CONTROLLER_ADDR:
                     return
 
-
+        print "migration state: ", self.migrationState
         print "packet from switch id: ", dpid
         if not self.switches.has_key(dpid):
             self.switches[dpid] = dp;
@@ -359,7 +359,7 @@ class OurServer(ControllerBase):
     @route('OurController', config.CONTROLLER['METHODS']['MIGRATION_READY'][0], methods=[config.CONTROLLER['METHODS']['MIGRATION_READY'][1]])
     def migration_ready(self, req, **kwargs):
         print "reach migration ready"
-        print "controler.migrationState = ", self.controller.migrationState
+        print "controler.migrationState = ", self.controller.migrationState 
 
         if self.controller.migrationState == 1:
             print "  enter migration ready"
@@ -412,7 +412,8 @@ class OurServer(ControllerBase):
             datapath.send_msg(req)
             print "set role: master for dpid " + str(dpid)
             
-            url = "http://127.0.0.1:" + str(config.MONITOR['PORT']) + str(config.CONTROLLER['METHODS']['FINISH_MIGRATION'][0])
+            url = "http://127.0.0.1:" + str(config.MONITOR['PORT']) + str(config.MONITOR['METHODS']['FINISH_MIGRATION'][0])
+            print url
             util.Http_Request(url, jsonData)            # tell the monitor to the change topo
             
             return Response(content_type='text/plain', body='migration_end')
