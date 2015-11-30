@@ -35,7 +35,7 @@ MONITOR = {
 }
 
 CONTROLLER = {
-    'STAT_SUBMIT_INTERVAL':10,
+    'STAT_SUBMIT_INTERVAL':2,
     'METHODS':{
         'INIT_ROLE':['/init_role','POST'], # because the util.Http_Request only use POST
         'START_MIGRATION':['/migrate','POST'],

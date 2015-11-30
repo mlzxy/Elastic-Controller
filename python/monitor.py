@@ -1,6 +1,7 @@
 from flask import Flask,request,Response, jsonify
 import Config as config
 import util
+from collections import deque
 Traffic_Data = {}
 app = Flask(__name__)
 
@@ -10,6 +11,9 @@ topo_inited = False
 
 SWITCHES_ROLE = {}
 Switch_traffic = {}
+traffic_queue_ctrl1 = deque([], maxlen = config.MONITOR['CHECK_INTERVAL'] / config.CONTROLLER['STAT_SUBMIT_INTERVAL'])
+traffic_queue_ctrl2 = deque([], maxlen = config.MONITOR['CHECK_INTERVAL'] / config.CONTROLLER['STAT_SUBMIT_INTERVAL'])
+
 
 @app.route("/")
 def hello():
@@ -18,28 +22,21 @@ def hello():
 
 @app.route(config.MONITOR['METHODS']['STAT'][0], methods=[config.MONITOR['METHODS']['STAT'][1]])
 def stat():
-    # Switch_traffic = [0] * len(config.)
     statDict = request.get_json()
-    # TODO:    
-    # argment the Traffic_Data here
-    # print "******"
-    # print statDict
-    # print "******"
     # format of statDict:
     # {u'ip': u'http://127.0.0.1:8080', u'traffic': {u'1': 9, u'3': 9, u'2': 9}}
 
-    # copy traffic info from statDict to Switch_traffic
-    # format of Switch_traffic:
-    # {controller_ip: {switch_id: number,},}
-    #if len(Switch_traffic) == len(config.CONTROLLERS):
-    #    Switch_traffic = {}
-    Switch_traffic[statDict['ip']] = statDict['traffic']
+    # copy traffic info from statDict to two deque
 
-
-    return jsonify(**{
-        'success':True
-    })
+    if statDict['ip'] == config.SWITCHES.keys()[0]:
+        # controller 1
+        traffic_queue_ctrl1.append(statDict['traffic'])
+    elif statDict['ip'] == config.SWITCHES.keys()[1]:
+        # controller 2
+        traffic_queue_ctrl2.append(statDict['traffic'])
     
+    return jsonify(**{'success':True})
+
 
 
 
@@ -47,24 +44,22 @@ def stat():
 def change_topo():
     content = request.get_json(silent=True)
     global changing_topo
-    changing_topo = False
-    # TODO:
-    # after migration, update the Topology here
-    # source controller, destination controler, switch id
-    # SWITCHES_ROLE[source_ctrl][switch_id] = 's' ? 'm' : 's'
-    # SWITCHES_ROLE[destination_ctrl][switch_id] = 's' ? 'm' : 's'
-    print content, type(content)
 
+    # after migration, update the Topology here
+    source_ctrl = content['sourceController']
+    dest_ctrl = content['targetController']
+    switch_id = content['targetSwitch']
+    if SWITCHES_ROLE[source_ctrl][int(switch_id)] == 's':
+        SWITCHES_ROLE[dest_ctrl][int(switch_id)] = 'm'
+    elif SWITCHES_ROLE[source_ctrl][int(switch_id)] == 'm':
+        SWITCHES_ROLE[dest_ctrl][int(switch_id)] = 's'
 
 
 @app.route(config.MONITOR['METHODS']['TOPO_REPORT'][0],methods=[config.MONITOR['METHODS']['TOPO_REPORT'][1]])
 def gen_topo():
     global topo_inited, Switch_traffic
-    # print "TOPO_REPORT"
     content = request.get_json(silent=True)
 
-    # format of Switch_traffic:
-    # Switch_traffic = {controller_ip: {switch_id: in package number},}
     Switch_traffic = {}
 
     Traffic_Data[content['ctrl']] = [{
@@ -92,51 +87,68 @@ def monitor():
     global topo_inited, changing_topo
     print "this is the monitor"
     # print "This is the monitor thread"
-    ctrls = Switch_traffic.keys()   
-    # print "In the Monitor, Switch_Traffic",Switch_traffic
-    if topo_inited and len(ctrls) == len(config.CONTROLLERS) and not changing_topo:
-        # TODO:
+    if topo_inited and not changing_topo:
         # Implement the monitoring algorithm here, and notify controller use util.HTTP_Request
         # {controller_ip: {switch_id: number,},}
         sum1 = 0
         sum2 = 0
-        # print Switch_traffic
 
+        controller_ip_1 = config.SWITCHES.keys()[0]
+        controller_ip_2 = config.SWITCHES.keys()[1]
+        # calculate the traffic sum for two controllers
+        controller_traffic_1 = {}
+        controller_traffic_2 = {}
 
-        controller_ip_1 = ctrls[0]
-        controller_ip_2 = ctrls[1]
-        for key in Switch_traffic[controller_ip_1]:
-            sum1 += Switch_traffic[controller_ip_1][key]
-        for key in Switch_traffic[controller_ip_2]:
-            sum2 += Switch_traffic[controller_ip_2][key]
+        for i in range(0, len(traffic_queue_ctrl1)):
+            for key in traffic_queue_ctrl1[i]:
+                if controller_traffic_1.has_key(key):
+                    controller_traffic_1[key] += traffic_queue_ctrl1[i][key]
+                else:
+                    controller_traffic_1[key] = traffic_queue_ctrl1[i][key]
+        
+        for i in range(0, len(traffic_queue_ctrl2)):
+            for key in traffic_queue_ctrl2[i]:
+                if controller_traffic_2.has_key(key):
+                    controller_traffic_2[key] += traffic_queue_ctrl2[i][key]
+                else:
+                    controller_traffic_2[key] = traffic_queue_ctrl2[i][key]
 
+        for key in controller_traffic_1:
+            sum1 += controller_traffic_1[key]
+        for key in controller_traffic_2:
+            sum2 += controller_traffic_2[key]
+        
         delta = abs(sum1 - sum2)
-        if sum1 > sum2:
-            source_ctrl_ip = controller_ip_1
-            dest_ctrl_ip = controller_ip_2
-            smaller = sum2
-        else:
-            source_ctrl_ip = controller_ip_2
-            dest_ctrl_ip = controller_ip_1
-            smaller = sum1
-
-        if (delta + 0.0) / smaller > -0.5:        
-            # migrate
-            nearest_switch_id = ''
-            minimum = 9999
-            for key in Switch_traffic[source_ctrl_ip]:
-                distance = abs(Switch_traffic[source_ctrl_ip][key] - delta / 2)
-                if minimum > distance:
+        nearest_switch_id = ''
+        minimum = 9999
+        if sum1 > sum2 * 1.5:
+            for key in controller_traffic_1:
+                distance = abs(controller_traffic_1[key] - delta/2)
+                if distance < minimum:
                     nearest_switch_id = key
                     minimum = distance
-            # start migration
             obj = {
-                'source':source_ctrl_ip,
-                'dest':dest_ctrl_ip,
-                'switch':nearest_switch_id
+                'source' : controller_ip_1,
+                'dest' : controller_ip_2,
+                'switch' : nearest_switch_id
             }
-            print 'migrating: ',obj
-            util.Http_Request(source_ctrl_ip + config.CONTROLLER['METHODS']['START_MIGRATION'][0], obj)
+            print obj
+            util.Http_Request(controller_ip_1 + config.CONTROLLER['METHODS']['START_MIGRATION'][0], obj)
+            changing_topo = True
+
+        elif sum2 > sum1 * 1.5:
+            for key in controller_traffic_2:
+                distance = abs(controller_traffic_2[key] - delta/2)
+                if distance < minimum:
+                    nearest_switch_id = key
+                    minimum = distance
+            obj = {
+                'source' : controller_ip_2,
+                'dest' : controller_ip_1,
+                'switch' : nearest_switch_id
+            }
+            print obj
+            util.Http_Request(controller_ip_2 + config.CONTROLLER['METHODS']['START_MIGRATION'][0], obj)
             changing_topo = True
             # for testing
             # topo_inited = False
@@ -144,11 +156,6 @@ def monitor():
     else:
         # if the topology is not inited, then do nothing
         pass
-
-
-
-
-
 
 
 # MAIN
