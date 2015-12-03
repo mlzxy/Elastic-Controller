@@ -26,7 +26,7 @@ CONF = cfg.CONF
 CONTROLLER_ADDR = 'http://127.0.0.1:' + str(CONF['wsapi_port'])
 
 import pdb
-#
+
 
 def http_send_stat(x):
     return util.Http_Request('http://127.0.0.1:'+str(config.MONITOR['PORT'])+str(config.MONITOR['METHODS']['STAT'][0]),x)
@@ -183,7 +183,7 @@ class OurController(app_manager.RyuApp):
         
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def packet_in_handler(self, ev):
-        print "migration state: ", self.migrationState
+
         
         msg = ev.msg
         dp = msg.datapath
@@ -199,8 +199,8 @@ class OurController(app_manager.RyuApp):
                 if self.migrationData['sourceController'] == CONTROLLER_ADDR:
                     return
 
-
-        print "packet from switch id: ", dpid
+        # print "migration state: ", self.migrationState
+        # print "packet from switch id: ", dpid
         if not self.switches.has_key(dpid):
             self.switches[dpid] = dp;
         
@@ -242,6 +242,7 @@ class OurController(app_manager.RyuApp):
 
 
 
+
     @set_ev_cls(ofp_event.EventOFPBarrierReply, MAIN_DISPATCHER)
     def barrier_reply_handler(self, ev):
         if self.migrationState == 2:    # delete the dummy flow
@@ -274,7 +275,10 @@ class OurController(app_manager.RyuApp):
             util.Http_Request(url, jsonData)   # send ready message back to source controller
             # self.send_role_request(jsonData['targetSwitch'], Constant["Role"]["Slave"])
             print "Migration end, for switch: " + jsonData['targetSwitch'] + " from controller: " + jsonData['sourceController'] + " to controller: " + jsonData['targetController']
-
+            
+            # print CONTROLLER_ADDR + " become slave of switch: " + jsonData['targetSwitch']
+            # self.migrationState = 0
+            # self.migrationData = {}
 
 
     @set_ev_cls(ofp_event.EventOFPFlowRemoved, MAIN_DISPATCHER)
@@ -355,7 +359,7 @@ class OurServer(ControllerBase):
     @route('OurController', config.CONTROLLER['METHODS']['MIGRATION_READY'][0], methods=[config.CONTROLLER['METHODS']['MIGRATION_READY'][1]])
     def migration_ready(self, req, **kwargs):
         print "reach migration ready"
-        print "controler.migrationState = ", self.controller.migrationState
+        print "controler.migrationState = ", self.controller.migrationState 
 
         if self.controller.migrationState == 1:
             print "  enter migration ready"
@@ -408,7 +412,7 @@ class OurServer(ControllerBase):
             datapath.send_msg(req)
             print "set role: master for dpid " + str(dpid)
             
-            url = "http://127.0.0.1:" + str(config.MONITOR['PORT']) + str(config.CONTROLLER['METHODS']['FINISH_MIGRATION'][0])
+            url = "http://127.0.0.1:" + str(config.MONITOR['PORT']) + str(config.MONITOR['METHODS']['FINISH_MIGRATION'][0])
             util.Http_Request(url, jsonData)            # tell the monitor to the change topo
             
             return Response(content_type='text/plain', body='migration_end')
@@ -419,6 +423,8 @@ class OurServer(ControllerBase):
 
             
 
+
+    
 
 #
 # API

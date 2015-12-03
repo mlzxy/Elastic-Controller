@@ -50,6 +50,8 @@ monitor:
 sample-rest-api:
 	ryu-manager ./python/Samples/restApi.py
 
+sample-net-local:
+	sudo mn --topo single,3 --mac --switch ovsk
 
 shutdown:
 	sudo killall -KILL python ryu-manager mn make
