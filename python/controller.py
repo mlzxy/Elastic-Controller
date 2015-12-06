@@ -119,7 +119,7 @@ class OurController(app_manager.RyuApp):
         else:
             if self.role_inited:
                 data_to_send = self.switch_traffic.copy()
-                res = http_send_stat(data_to_send)
+                # res = http_send_stat(data_to_send)
                 self.switch_traffic = {'ip': CONTROLLER_ADDR, 'traffic': {}}
             else:
                 k = self.switches.keys()
