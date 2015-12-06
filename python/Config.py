@@ -16,8 +16,8 @@ CONTROLLERS = [
 ]                 # sn1 + sn2 = 8
 
 SWITCHES = {
-    'http://127.0.0.1:8081':['s','s','s','m','m','m','m','m'],
-    'http://127.0.0.1:8080':['m','m','m','s','s','s','s','s']
+    'http://127.0.0.1:8081':['s','m','m','m','m','m','m','m'],
+    'http://127.0.0.1:8080':['m','s','s','s','s','s','s','s']
 }
 
 SWITCH_NUMBER = 8
@@ -31,7 +31,7 @@ MONITOR = {
         "FINISH_MIGRATION":["/change_topo","POST"],
         "TOPO_REPORT":["/report_topo","POST"]
     },
-    "CHECK_INTERVAL":10         # seconds
+    "CHECK_INTERVAL":40         # seconds
 }
 
 CONTROLLER = {

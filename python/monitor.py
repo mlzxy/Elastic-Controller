@@ -160,5 +160,5 @@ def monitor():
 
 # MAIN
 # gen_topo()
-util.Set_Interval(monitor,config.MONITOR['CHECK_INTERVAL'] * 2)
+util.Set_Interval(monitor,config.MONITOR['CHECK_INTERVAL'])
 app.run(host='0.0.0.0', port=config.MONITOR['PORT'])
