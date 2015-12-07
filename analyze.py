@@ -105,7 +105,7 @@ def analyze_migrate(f,d,interval):
     throughput_key = port(f.name,'throughput')
     temp_dict = {}
     for row in reader:
-        time = math.floor(float(row[0]))
+        time = math.floor(float(row[0])/interval) * interval
         if temp_dict.has_key(time):
             temp_dict[time] = temp_dict[time] + 1
         else:
@@ -202,15 +202,16 @@ def analyze_throughput(f,d):
         
     
 if __name__ == '__main__':    
-    # try:        
+    try:
         if len(sys.argv) < 2:
             usage()
         elif len(sys.argv) == 2:
             main(os.path.abspath(sys.argv[1]), os.getcwd(), 1)
         elif len(sys.argv) == 3:
             main(os.path.abspath(sys.argv[1]), os.path.abspath(sys.argv[2]), 1)
-        elif len(sys.argv) == 3:
-            main(os.path.abspath(sys.argv[1]), os.path.abspath(sys.argv[2]), float(sys.argv[3]))            
-    # except Exception as e:
-    #     print e        
-    #     usage()
+        elif len(sys.argv) == 4:
+            main(os.path.abspath(sys.argv[1]), os.path.abspath(sys.argv[2]),
+                 float(sys.argv[3]))            
+    except Exception as e:
+        print e        
+        usage()
