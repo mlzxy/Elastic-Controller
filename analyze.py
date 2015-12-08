@@ -143,29 +143,62 @@ def rate(string):
 
 pin = "Type: OFPT_PACKET_IN"
 pout = "Type: OFPT_PACKET_OUT"
+# def restime(f):
+#     reader = csv.reader(f)
+#     f.seek(0)
+#     pin_num = 0.0
+#     pout_num = 0.0
+#     pin_time = 0.0
+#     pout_time = 0.0
+#     for row in reader:
+#         try:
+#             t = float(row[1])
+#             info = row[6]
+#             if not info.find(pin) == -1:
+#                 pin_time = pin_time + t
+#                 pin_num = pin_num + 1
+#             else:
+#                 pout_time = pout_time + t
+#                 pout_num = pout_num + 1
+#         except:
+#             continue
+
+#     r = pout_time/pout_num - pin_time/pin_num
+#     # ipdb.set_trace()
+#     return  r
+
 def restime(f):
     reader = csv.reader(f)
     f.seek(0)
-    pin_num = 0.0
-    pout_num = 0.0
+    total_num = 20
     pin_time = 0.0
+    pin_num = 0
     pout_time = 0.0
-    for row in reader:
-        try:
-            t = float(row[1])
-            info = row[6]
-            if info == pin:
-                pin_time = pin_time + t
-                pin_num = pin_num + 1
-            elif info == pout:
-                pout_time = pout_time + t
-                pout_num = pout_num + 1
-            else:
-                pass
-        except:
-            continue
-    ipdb.set_trace()
-    return pout_time/pout_num - pin_time/pin_num
+    pout_num = 0
+    reader_list = [row for row in reader]
+    reader_list = reader_list[1:]
+    reader_list = [[float(row[1]), row[6]] for row in reader_list]
+    reader_list.sort(key=lambda x: x[0])
+    # ipdb.set_trace()
+    
+    for row in reader_list:
+        
+        t = float(row[0])
+        info = row[1]
+        if info == pin and pin_num < total_num:
+            pin_time = pin_time + t
+            pin_num = pin_num + 1
+        elif info == pout and pout_num < total_num:
+            pout_time = pout_time + t
+            pout_num = pout_num + 1
+
+        if pout_num == total_num and pin_num == total_num:
+            break
+        
+    # print pout_time,pin_time,pout_num,pin_num
+    r = (pout_time - pin_time)/total_num
+    # ipdb.set_trace()
+    return  r
 
 def thoughput(f):    
     reader = csv.reader(f)
