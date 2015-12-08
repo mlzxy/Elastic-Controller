@@ -6,5 +6,5 @@
 Run this to generate analyzed result in csv files
 
 ```bash
-./analyze.py ./Data ./Result
+./analyze.py ./Data/new ./Result/new
 ```

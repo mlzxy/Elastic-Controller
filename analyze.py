@@ -140,23 +140,32 @@ def rate(string):
     except:
         return int(string[4:7])
 
+
+pin = "Type: OFPT_PACKET_IN"
+pout = "Type: OFPT_PACKET_OUT"
 def restime(f):
     reader = csv.reader(f)
     f.seek(0)
-    rows = 0
-    min_time = 10000
-    max_time = -10000
+    pin_num = 0.0
+    pout_num = 0.0
+    pin_time = 0.0
+    pout_time = 0.0
     for row in reader:
         try:
             t = float(row[1])
-            if t > max_time:
-                max_time = t
-            if t < min_time:
-                min_time = t            
-            rows = rows + 1
+            info = row[6]
+            if info == pin:
+                pin_time = pin_time + t
+                pin_num = pin_num + 1
+            elif info == pout:
+                pout_time = pout_time + t
+                pout_num = pout_num + 1
+            else:
+                pass
         except:
             continue
-    return ((max_time - min_time)*2)/float(rows)
+    ipdb.set_trace()
+    return pout_time/pout_num - pin_time/pin_num
 
 def thoughput(f):    
     reader = csv.reader(f)
