@@ -3,6 +3,12 @@
 2015 Fall CSE222A  Group 8 Project
 
 
+Implement a load balancing algorithm between OpenFlow controllers and switches
+
+- Use [Mininet](https://github.com/mininet/mininet) and [Ryu Python](http://osrg.github.io/ryu/).
+- Safely migrate switches between controllers
+
+
 ## Results
 
 ### Response Time Before Migration
