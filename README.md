@@ -16,7 +16,7 @@ Implement a load balancing algorithm between OpenFlow controllers and switches
 ![](https://raw.githubusercontent.com/BenBBear/Elastic-Controller/data-analysis/Figures/new/restime-4-4.png)
 
 
-The respond time of Controller B has a higher respond time than the Controller A. Because B is under more traffic pressure.
+The respond time of Controller B is higher than the Controller A. Because B is under more traffic pressure.
 
 ### Response Time After Migration
 
