@@ -54,8 +54,8 @@ The MIT License
 
 Copyright (c) 2015-2016 
 
-Xinyu Zhang <xiz368@eng.ucsd.edu>
-
 Candice Yang <liy007@eng.ucsd.edu>
 
 Vector Lee <gul027@eng.ucsd.edu>
+
+Xinyu Zhang <xiz368@eng.ucsd.edu>
