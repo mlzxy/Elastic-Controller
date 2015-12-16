@@ -44,4 +44,18 @@ After the migration, we see significant improvement.
 The result has showed that after migration, the load is more balanced between two controllers, especially for throughput. The overall throughput increased after migration. However, the result of the response time is little weird. We think the main reason for this is the network congestion. Since Mininet only provides a very limited bandwidth network, when we increase the packet sending rate, a lot of packets will be dropped and resent because of congestion, therefore disrupt our test result.
 
 
+
 We conduct our experiment on a very simple network topology, with only one application: packet sending application. It is a proof of concept experiment. For future work, we need to deploy the system on large scale network, with real world network application running on top of it, to see how it performs and how much it can help to balance the load within the network.
+
+
+## LICENSE
+
+The MIT License
+
+Copyright (c) 2015-2016 
+
+Xinyu Zhang <xiz368@eng.ucsd.edu>
+
+Candice Yang <liy007@eng.ucsd.edu>
+
+Vector Lee <gul027@eng.ucsd.edu>
