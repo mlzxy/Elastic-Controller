@@ -6,7 +6,7 @@
 Implement a load balancing algorithm between OpenFlow controllers and switches
 
 - Use [Mininet](https://github.com/mininet/mininet) and [Ryu Python](http://osrg.github.io/ryu/).
-- Safely migrate switches between controllers
+- **Safely migrate switches between controllers based on payload of controllers**
 
 
 ## Results
